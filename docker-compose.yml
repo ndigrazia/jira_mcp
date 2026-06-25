@@ -1,0 +1,18 @@
+services:
+  jira-mcp-server:
+    image: jira-mcp-server:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jira-mcp-server
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - JIRA_USERNAME=username  
+      - JIRA_API_TOKEN=token
+      - JIRA_BASE_URL=url
+      - MCP_TRANSPORT=sse
+      - ALLOWED_METHODS=get
+    restart: unless-stopped

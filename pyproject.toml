@@ -1,0 +1,13 @@
+[project]
+name = "jira"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=3.4.2",
+    "httpx>=0.28.1",
+    "mcp>=1.28.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
