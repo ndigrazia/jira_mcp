@@ -1,19 +1,46 @@
+import os
 import asyncio
 import logging
+from dotenv import load_dotenv
 from mcp import ClientSession
-from mcp.client.sse import sse_client
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("mcp-client")
 
 async def test_client():
-    server_url = "http://127.0.0.1:8000/sse"
-    logger.info(f"Connecting to MCP SSE Server at {server_url}...")
+    transport = os.environ.get("MCP_CLIENT_TRANSPORT", "http").lower()
+    host = os.environ.get("MCP_CLIENT_HOST", "localhost")
+    port = os.environ.get("MCP_CLIENT_PORT", "8000")
+    path = os.environ.get("MCP_CLIENT_PATH", "/mcp")
+
+    # Enforce correct formatting for the path
+    if path and not path.startswith("/"):
+        path = f"/{path}"
+
+    server_url = f"http://{host}:{port}{path}"
+
+    logger.info(f"Using MCP Client Transport: {transport.upper()}")
+    logger.info(f"Connecting to MCP Server at {server_url}...")
     
     try:
-        # Establish connection to the running SSE server
-        async with sse_client(server_url) as (read_stream, write_stream):
+        if transport == "http":
+            from mcp.client.streamable_http import streamable_http_client
+            client_ctx = streamable_http_client(server_url)
+        elif transport == "sse":
+            from mcp.client.sse import sse_client
+            client_ctx = sse_client(server_url)
+        else:
+            raise ValueError(f"Unsupported transport: {transport}. Must be 'http' or 'sse'.")
+
+        # Establish connection to the running server
+        async with client_ctx as streams:
+            # sse_client returns 2 items, streamable_http_client returns 3 items
+            read_stream, write_stream = streams[0], streams[1]
+            
             # Create a client session over the read and write streams
             async with ClientSession(read_stream, write_stream) as session:
                 logger.info("Initializing session with the MCP server...")
