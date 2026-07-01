@@ -21,18 +21,28 @@ async def test_client():
     if path and not path.startswith("/"):
         path = f"/{path}"
 
-    server_url = f"http://{host}:{port}{path}"
+    server_url = f"{host}:{port}{path}"
+
+    client_id = os.environ.get("MCP_CLIENT_CLIENT_ID", "")
+    client_secret = os.environ.get("MCP_CLIENT_CLIENT_SECRET", "")
+    
+    headers = {
+        "client_id": client_id,
+        "client_secret": client_secret
+    }
 
     logger.info(f"Using MCP Client Transport: {transport.upper()}")
     logger.info(f"Connecting to MCP Server at {server_url}...")
     
     try:
         if transport == "http":
+            import httpx
             from mcp.client.streamable_http import streamable_http_client
-            client_ctx = streamable_http_client(server_url)
+            http_client = httpx.AsyncClient(headers=headers)
+            client_ctx = streamable_http_client(server_url, http_client=http_client)
         elif transport == "sse":
             from mcp.client.sse import sse_client
-            client_ctx = sse_client(server_url)
+            client_ctx = sse_client(server_url, headers=headers)
         else:
             raise ValueError(f"Unsupported transport: {transport}. Must be 'http' or 'sse'.")
 

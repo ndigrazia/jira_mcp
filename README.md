@@ -1,81 +1,84 @@
-# Dynamic Jira Software Cloud MCP Server
+# 🛠️ Dynamic Jira Software Cloud MCP Server
 
-A premium, dynamic Model Context Protocol (MCP) server generated dynamically from Atlassian's official `swagger.json` specification using the `FastMCP` framework in Python.
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
+[![MCP Specification](https://img.shields.io/badge/mcp-1.0.0-orange.svg)](https://modelcontextprotocol.io)
+[![FastMCP](https://img.shields.io/badge/framework-FastMCP-green.svg)](https://github.com/jestor/fastmcp)
 
-This server dynamically exposes **over 100 Jira Software Cloud REST API operations** as fully typed tools for Large Language Models (LLMs) to interact with, supporting both **Stdio** and **Server-Sent Events (SSE)** transports.
+An enterprise-ready, premium **Model Context Protocol (MCP)** server generated dynamically from Atlassian's official Jira Cloud REST API specifications (`swagger.json`). Built on top of the robust **FastMCP** framework, it exposes **over 100 Jira Software Cloud operations** as fully typed tools for LLMs (such as Claude).
 
----
-
-## ✨ Features
-
-- **Dynamic API Generation**: Automatically parses Jira's Swagger/OpenAPI spec to register and expose 105 tools.
-- **Reference Resolution (`$ref`)**: Recursively resolves and parses internal OpenAPI schema definitions.
-- **Dynamic Parameter Mapping**: Extracts Path parameters, Query parameters, and JSON Request bodies, mapping them to native Python type annotations (e.g., `int`, `str`, `list`, `dict`) inside dynamic function signatures for LLM introspection.
-- **Method Scoping / Security**: Easily restrict LLMs to specific HTTP methods (e.g., read-only with `ALLOWED_METHODS=get`, or write access with `ALLOWED_METHODS=get,post,put,delete`).
-- **SSE & Stdio Support**: Seamlessly switch between Stdio (ideal for local IDEs and Claude Desktop) and SSE (ideal for cloud-native web client connections).
-- **Enterprise Docker Image**: Formulated with security best practices, using a secure, non-root system user.
+This server supports both **Stdio** (local) and **SSE** (Server-Sent Events) transport modes, enabling seamless integration into any LLM environment, from desktop applications to cloud-native microservices.
 
 ---
 
-## 🏗 Architecture & Project Structure
+## 🚀 Key Capabilities
 
-The project is structured following highly modular and decoupled software engineering best practices:
+- **Automated Tool Registration**: Parses Atlassian's OpenAPI 3.0 specs to register and expose 100+ fully documented tools.
+- **Dynamic Parameter Resolution**: Resolves `$ref` types recursively and maps path, query, and request body variables into native Python signatures (`str`, `int`, `bool`, `list`, `dict`) with default values.
+- **Granular Access Control**: Limit operations using `ALLOWED_METHODS` (e.g. read-only `get` or full `get,post,put,delete` CRUD permissions).
+- **Flexible Transports**: Run locally with standard high-performance Stdio or expose via a production-grade SSE server.
+- **Secure Containerization**: Built using security best practices with a hardened, non-root user inside a secure Docker base.
+
+---
+
+## 📁 Repository Blueprint
 
 ```text
-├── .env                         # Local environment configuration
-├── Dockerfile                   # Safe, non-root system user Docker image setup
-├── docker-compose.yml           # Automated multi-container configuration
-├── pyproject.toml               # Python project configuration and dependency list
-├── dynamic_jira_mcp.py          # FastMCP server registration and transport hub
-├── dynamic_jira_mcp_client.py   # Async MCP Client for testing the running SSE server
-├── swagger.json                 # Atlassian Jira Software Cloud API OpenAPI 3.0 specification
-├── openapi/                     # Decoupled OpenAPI extraction and client package
+├── .env                         # Environment configurations
+├── Dockerfile                   # hardened, multi-stage production Docker image
+├── docker-compose.yml           # Container orchestration template for SSE server
+├── pyproject.toml               # Poetry/uv dependency specs and pytest configurations
+├── dynamic_jira_mcp.py          # FastMCP server launcher & tool generation engine
+├── dynamic_jira_mcp_client.py   # Asynchronous test client with custom client header validation
+├── swagger.json                 # Official Atlassian Jira Software Cloud OpenAPI schema
+├── openapi/                     # Decoupled core modules
 │   ├── __init__.py
-│   └── openapi_client.py        # Generic OpenAPI spec parser and async HTTP request execution
-└── tests/                       # Fully automated test suite
-    └── test_dynamic_jira_mcp.py # Pytest-compatible tests with live console logging
+│   └── openapi_client.py        # Schema parser, type mapper, and async HTTP engine
+└── tests/                       # Complete automated unit & integration testing suite
+    └── test_dynamic_jira_mcp.py # Validation suite testing client resolution, mapping & registers
 ```
 
 ---
 
-## ⚙️ Configuration & Environment Variables
+## ⚙️ Setup and Configuration
 
-Create a local `.env` file in the root directory to customize the MCP server and client behavior:
+Create a local `.env` file in the root directory:
 
 ```env
-# Atlassian Jira Instance URL (e.g., https://your-domain.atlassian.net)
+# Atlassian Jira Instance URL
 JIRA_BASE_URL=https://your-domain.atlassian.net
 
-# Atlassian Account Email
+# Jira Username (Account Email)
 JIRA_USERNAME=your-email@example.com
 
-# Atlassian Account API Token
+# Jira API Token (Not your login password!)
 JIRA_API_TOKEN=your-jira-api-token
 
-# Allowed HTTP Methods (comma-separated: e.g., "get" for read-only or "get,post,put,delete" for full CRUD)
+# API Operations Scope Control (comma-separated HTTP methods)
 ALLOWED_METHODS=get,post,put,delete
 
-# MCP Server Settings
-MCP_TRANSPORT=sse
+# Server Transport Configuration
+MCP_TRANSPORT=http
 MCP_HOST=0.0.0.0
 MCP_PORT=8000
 
-# MCP Client Settings (for dynamic_jira_mcp_client.py)
-MCP_CLIENT_TRANSPORT=sse
-MCP_CLIENT_HOST=localhost
+# Client Configuration
+MCP_CLIENT_TRANSPORT=http
+MCP_CLIENT_HOST=http://localhost
 MCP_CLIENT_PORT=8000
 MCP_CLIENT_PATH=/mcp
+
+# Optional Client Security Headers
+MCP_CLIENT_CLIENT_ID=your-client-id
+MCP_CLIENT_CLIENT_SECRET=your-client-secret
 ```
 
 ---
 
 ## 🖥 Claude Desktop Integration
 
-To use this dynamic Jira server inside Claude Desktop, add it to your configuration file (typically located at `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS or `%APPDATA%\Claude\claude_desktop_config.json` on Windows).
+Integrate the MCP server with Claude Desktop by adding it to your `claude_desktop_config.json` configuration file:
 
-### Configuration for Stdio Mode (Recommended for local setup)
-
-Ensure your `ALLOWED_METHODS` and authentication keys are set properly:
+### Local Stdio Integration (Recommended)
 
 ```json
 {
@@ -103,57 +106,60 @@ Ensure your `ALLOWED_METHODS` and authentication keys are set properly:
 
 ---
 
-## 🚀 Running the Server
+## 🏃 Launching the Server
 
-### 1. Locally with `uv` (Fastest)
+### 1. Locally with `uv`
 
-Make sure you have [uv](https://github.com/astral-sh/uv) installed, then run:
+Ensure you have [uv](https://github.com/astral-sh/uv) installed, then run:
 
 ```bash
-# Install dependencies and launch the server
 uv run python dynamic_jira_mcp.py
 ```
 
-### 2. Containerized with Docker
-
-This container is strictly configured with a **non-root system user** for industry-standard production safety.
+### 2. Using Docker
 
 ```bash
-# Build the Docker image
+# Build the secure image
 docker build -t jira-mcp-server .
 
-# Run the container mapping port 8000
+# Run the container with environment variables
 docker run -p 8000:8000 --env-file .env jira-mcp-server
 ```
 
-### 3. Automatically with Docker Compose (Recommended for SSE)
-
-To spin up, build (if missing), and tag the image, launch via compose:
+### 3. Using Docker Compose
 
 ```bash
-# Launch the containerized server in detached mode
+# Spin up in detached mode
 docker compose up -d
 
-# View live server logs
+# View log stream
 docker logs -f jira-mcp-server
 ```
 
 ---
 
-## 🧪 Testing and Introspection
+## 🧪 Testing & Diagnostics
 
-### 1. Real-time Console Log Tests via Pytest
+### 1. Execute Automated Pytest Suite
 
-Run the comprehensive async testing suite with full live logging outputs:
+Run our comprehensive verification suite:
 
 ```bash
 uv run python -m pytest -o log_cli=true --log-cli-level=INFO tests/
 ```
 
-### 2. Connect via the MCP Client Component
+### 2. Run Asynchronous Test Client
 
-If you run the server using `MCP_TRANSPORT=sse` (port `8000`), you can test connection, list registered tools, and introspect signatures by running the asynchronous test client:
+To verify your SSE/HTTP server connectivity along with proper headers transmission:
 
 ```bash
 uv run python dynamic_jira_mcp_client.py
 ```
+
+---
+
+## 🤝 Troubleshooting & Common Issues
+
+- **401 Unauthorized**: Ensure your `JIRA_USERNAME` is correct and `JIRA_API_TOKEN` is generated properly from your Atlassian Security Panel.
+- **403 Forbidden**: Confirm that the requested action is permitted for your user account inside your target Jira project space and matches allowed settings inside `ALLOWED_METHODS`.
+- **SSE Connection Timeout**: Ensure `MCP_HOST` is bound to `0.0.0.0` inside containerized setups, allowing public port-mapping to resolve correctly on the host network.
